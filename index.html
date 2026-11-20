@@ -1,0 +1,2200 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodePath Academy — Веб-разработка и современный Frontend с нуля</title>
+    <!-- Подключение Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключение Supabase JS SDK v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Подключение Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Подключение Font Awesome для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Кастомные стили для скроллбара и стеклянного эффекта */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #090d16;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .glass-nav {
+            background: rgba(9, 13, 22, 0.82);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        }
+        .glass-card {
+            background: rgba(17, 24, 39, 0.72);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.5);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 32px -12px rgba(79, 70, 229, 0.28);
+        }
+        .hero-glow {
+            background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.22) 0%, rgba(6, 182, 212, 0.08) 40%, transparent 70%);
+        }
+        /* Анимация появления Toast-уведомлений */
+        @keyframes slideInRight {
+            from { transform: translateX(110%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        .toast-enter {
+            animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .toast-exit {
+            animation: fadeOut 0.3s ease forwards;
+        }
+        /* Скрытие полосы прокрутки для горизонтальных фильтров на мобильных */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Контейнер для всплывающих уведомлений (Toast Notifications) -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- ===================================================================== -->
+    <!-- 1. ШАПКА САЙТА (HEADER)                                               -->
+    <!-- ===================================================================== -->
+    <header class="glass-nav fixed top-0 left-0 right-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 sm:h-20">
+                <!-- Логотип и название платформы -->
+                <a href="#" class="flex items-center gap-3 group focus:outline-none">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                    <div>
+                        <span class="text-lg sm:text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">
+                            CodePath<span class="text-cyan-400">Academy</span>
+                        </span>
+                        <span class="hidden sm:block text-[11px] text-slate-400 -mt-1 font-medium">Frontend & Web с нуля</span>
+                    </div>
+                </a>
+
+                <!-- Десктопная навигация -->
+                <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-300">
+                    <a href="#about" class="hover:text-cyan-400 transition-colors">О платформе</a>
+                    <a href="#catalog-wrapper" class="hover:text-cyan-400 transition-colors flex items-center gap-1.5">
+                        Видеоуроки
+                        <span id="nav-lock-badge" class="px-1.5 py-0.5 text-[11px] rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            <i class="fa-solid fa-lock text-[10px]"></i>
+                        </span>
+                    </a>
+                    <a href="#quiz" class="hover:text-cyan-400 transition-colors">Пройти опрос</a>
+                    <a href="#mentorship" class="hover:text-cyan-400 transition-colors">Заявка на менторство</a>
+                </nav>
+
+                <!-- Кнопки действий и статус авторизации в шапке -->
+                <div class="flex items-center gap-2 sm:gap-2.5">
+                    <!-- Блок авторизованного пользователя (показывается после входа) -->
+                    <div id="header-user-box" class="hidden items-center gap-2 bg-slate-800/90 border border-slate-700/80 pl-3 pr-1.5 py-1 rounded-xl">
+                        <div class="flex items-center gap-1.5 text-xs sm:text-sm">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            <span id="header-username" class="font-semibold text-white max-w-[110px] sm:max-w-[150px] truncate">student</span>
+                        </div>
+                        <button id="header-logout-btn" type="button"
+                                class="px-2.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-semibold transition-colors flex items-center gap-1.5">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>Выйти</span>
+                        </button>
+                    </div>
+
+                    <!-- Кнопка «Войти» для неавторизованных пользователей -->
+                    <a id="header-login-link" href="#auth-gate"
+                       class="px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span>Войти</span>
+                    </a>
+
+                    <!-- Кнопка панели управления Supabase / Пользователями -->
+                    <button id="open-supabase-modal-btn" type="button" title="Настройка Supabase и управление пользователями"
+                            class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-slate-700/80 transition-all shadow-sm">
+                        <i class="fa-solid fa-database text-emerald-400"></i>
+                        <span class="hidden xl:inline">Supabase</span>
+                        <span id="sb-status-dot" class="w-2 h-2 rounded-full bg-amber-400" title="Локальный/демо режим Supabase"></span>
+                    </button>
+
+                    <!-- Индикатор и кнопка настройки Telegram Bot API -->
+                    <button id="open-tg-settings-btn" type="button" title="Настройки Telegram Bot API"
+                            class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-slate-700/80 transition-all shadow-sm">
+                        <i class="fa-brands fa-telegram text-sky-400 text-base"></i>
+                        <span class="hidden xl:inline">Telegram</span>
+                        <span id="tg-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Подключен Telegram Bot API"></span>
+                    </button>
+
+                    <!-- Кнопка мобильного меню (Бургер) -->
+                    <button id="mobile-menu-btn" type="button" aria-label="Открыть меню" class="lg:hidden p-2.5 rounded-xl bg-slate-800/80 text-slate-200 hover:bg-slate-700 focus:outline-none">
+                        <i class="fa-solid fa-bars text-lg" id="mobile-menu-icon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Выпадающее мобильное меню -->
+        <div id="mobile-menu" class="hidden lg:hidden bg-slate-900/95 border-b border-slate-800 px-4 pt-2 pb-5 space-y-2">
+            <a href="#about" class="mobile-nav-link block px-4 py-3 rounded-xl text-base font-medium text-slate-200 hover:bg-slate-800 hover:text-cyan-400">
+                <i class="fa-solid fa-circle-info w-6 text-indigo-400"></i> О платформе
+            </a>
+            <a href="#catalog-wrapper" class="mobile-nav-link block px-4 py-3 rounded-xl text-base font-medium text-slate-200 hover:bg-slate-800 hover:text-cyan-400">
+                <i class="fa-solid fa-circle-play w-6 text-cyan-400"></i> Видеоуроки (18)
+            </a>
+            <a href="#quiz" class="mobile-nav-link block px-4 py-3 rounded-xl text-base font-medium text-slate-200 hover:bg-slate-800 hover:text-cyan-400">
+                <i class="fa-solid fa-list-check w-6 text-emerald-400"></i> Пройти опрос
+            </a>
+            <a href="#mentorship" class="mobile-nav-link block px-4 py-3 rounded-xl text-base font-medium text-slate-200 hover:bg-slate-800 hover:text-cyan-400">
+                <i class="fa-solid fa-paper-plane w-6 text-sky-400"></i> Заявка на менторство
+            </a>
+            <!-- Мобильная кнопка выхода (если пользователь авторизован) -->
+            <div id="mobile-user-controls" class="hidden pt-2 border-t border-slate-800 flex items-center justify-between px-4 py-2">
+                <span class="text-sm text-slate-300">Аккаунт: <strong id="mobile-username" class="text-white">student</strong></span>
+                <button id="mobile-logout-btn" type="button" class="px-3.5 py-2 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold">
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i> Выйти
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-16 sm:pt-20">
+
+        <!-- ===================================================================== -->
+        <!-- 2. ГЛАВНЫЙ ЭКРАН (HERO SECTION)                                       -->
+        <!-- ===================================================================== -->
+        <section id="about" class="relative hero-glow pt-12 pb-16 sm:pt-20 sm:pb-24 border-b border-slate-800/80">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-4xl mx-auto">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs sm:text-sm font-medium mb-6">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                        Бесплатная образовательная база знаний по Frontend-разработке
+                    </div>
+
+                    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight mb-6">
+                        Освой <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400">веб-разработку и Frontend</span> с нуля до первых проектов
+                    </h1>
+
+                    <p class="text-base sm:text-lg lg:text-xl text-slate-300 leading-relaxed mb-8 max-w-3xl mx-auto">
+                        <strong>CodePath Academy</strong> — структурированная платформа для новичков в IT, студентов и свитчеров из других профессий. Изучайте <strong>HTML5, CSS3, современный JavaScript, React и Git</strong> по отобранным видеоурокам, определите свой вектор развития в опросе и получите поддержку ментора.
+                    </p>
+
+                    <!-- Кнопки быстрого перехода -->
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
+                        <a href="#catalog-wrapper" class="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-semibold text-base shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2.5">
+                            <i class="fa-solid fa-play"></i> Смотреть видеоуроки
+                        </a>
+                        <a href="#quiz" class="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-100 border border-slate-700 font-semibold text-base transition-all flex items-center justify-center gap-2.5">
+                            <i class="fa-solid fa-compass text-cyan-400"></i> Подобрать план (Опрос)
+                        </a>
+                    </div>
+
+                    <!-- Карточки целевой аудитории и преимуществ -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-left">
+                        <div class="glass-card p-5 rounded-2xl">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-3 text-lg">
+                                <i class="fa-solid fa-seedling"></i>
+                            </div>
+                            <h3 class="font-bold text-white text-base mb-1">Для новичков с нуля</h3>
+                            <p class="text-sm text-slate-400">Последовательное погружение от первой HTML-страницы до интерактивных веб-приложений.</p>
+                        </div>
+                        <div class="glass-card p-5 rounded-2xl">
+                            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center mb-3 text-lg">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                            </div>
+                            <h3 class="font-bold text-white text-base mb-1">Студентам и свитчерам</h3>
+                            <p class="text-sm text-slate-400">Практическая база по React, асинхронному JS и Git для уверенного старта в коммерческой разработке.</p>
+                        </div>
+                        <div class="glass-card p-5 rounded-2xl">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3 text-lg">
+                                <i class="fa-brands fa-telegram"></i>
+                            </div>
+                            <h3 class="font-bold text-white text-base mb-1">Интеграция с Telegram</h3>
+                            <p class="text-sm text-slate-400">Мгновенная отправка результатов профориентационного опроса и заявок на менторство в Telegram-бота.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- 3. СЕКЦИЯ ДОСТУПА И КАТАЛОГА ВИДЕОУРОКОВ (SUPABASE AUTH PROTECTED)      -->
+        <!-- ===================================================================== -->
+        <div id="catalog-wrapper" class="border-b border-slate-800/80">
+            
+            <!-- 3A. ЭКРАН ОГРАНИЧЕННОГО ДОСТУПА И АВТОРИЗАЦИИ (ДЛЯ ГОСТЕЙ) -->
+            <section id="auth-gate" class="py-16 sm:py-24">
+                <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="glass-card rounded-3xl p-6 sm:p-10 lg:p-12 border-indigo-500/25 shadow-2xl relative overflow-hidden">
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+                            
+                            <!-- Левая колонка: Описание закрытого раздела и инструкция владельцу -->
+                            <div class="lg:col-span-6 space-y-5">
+                                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+                                    <i class="fa-solid fa-lock"></i> Закрытый образовательный раздел
+                                </div>
+                                <h2 class="text-2xl sm:text-4xl font-extrabold text-white leading-tight">
+                                    Авторизуйтесь для доступа к <span class="text-cyan-400">18 видеоурокам</span>
+                                </h2>
+                                <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+                                    Доступ к базе видеоматериалов по HTML, CSS, JavaScript, React и Git открыт только зарегистрированным студентам платформы через систему авторизации <strong>Supabase</strong>.
+                                </p>
+
+                                <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 text-xs sm:text-sm text-slate-300">
+                                    <div class="font-bold text-white flex items-center gap-2">
+                                        <i class="fa-solid fa-user-shield text-emerald-400"></i>
+                                        <span>Для владельца сайта:</span>
+                                    </div>
+                                    <p class="text-slate-400 leading-relaxed">
+                                        Вы можете подключить свой проект <strong>Supabase</strong> и самостоятельно создавать или удалять аккаунты студентов (логин и пароль) в панели управления.
+                                    </p>
+                                    <button type="button" id="gate-open-supabase-btn"
+                                            class="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-semibold pt-1 transition-colors">
+                                        <i class="fa-solid fa-gear"></i> Настроить Supabase / Управление пользователями
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Правая колонка: Форма входа (Логин и Пароль) -->
+                            <div class="lg:col-span-6">
+                                <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+                                    <div class="flex items-center justify-between mb-6">
+                                        <h3 class="text-xl font-bold text-white">Вход в кабинет</h3>
+                                        <span id="auth-mode-badge" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                                            Supabase Auth
+                                        </span>
+                                    </div>
+
+                                    <form id="login-form" class="space-y-4" novalidate>
+                                        <div>
+                                            <label for="login-username" class="block text-sm font-medium text-slate-300 mb-1.5">
+                                                Логин или Email <span class="text-rose-400">*</span>
+                                            </label>
+                                            <div class="relative">
+                                                <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                                                <input id="login-username" type="text" required autocomplete="username" placeholder="student1 или student@mail.ru"
+                                                       class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label for="login-password" class="block text-sm font-medium text-slate-300 mb-1.5">
+                                                Пароль <span class="text-rose-400">*</span>
+                                            </label>
+                                            <div class="relative">
+                                                <i class="fa-solid fa-key absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                                                <input id="login-password" type="password" required autocomplete="current-password" placeholder="••••••••"
+                                                       class="w-full pl-10 pr-11 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                                <button type="button" id="toggle-password-visibility" aria-label="Показать пароль"
+                                                        class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1">
+                                                    <i class="fa-regular fa-eye text-sm"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <button type="submit" id="login-submit-btn"
+                                                class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-bold text-sm sm:text-base shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2">
+                                            <i class="fa-solid fa-right-to-bracket"></i> Войти и открыть видеоуроки
+                                        </button>
+                                    </form>
+
+                                    <div id="demo-credentials-hint" class="mt-5 pt-4 border-t border-slate-800/90 text-xs text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <span>Тестовый аккаунт (без Supabase URL):</span>
+                                        <button type="button" id="fill-demo-login-btn" class="text-left sm:text-right font-mono text-cyan-400 hover:underline">
+                                            student / 123456
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3B. КАТАЛОГ ВИДЕОУРОКОВ (ПОЛНОСТЬЮ СКРЫТ ДО АВТОРИЗАЦИИ) -->
+            <section id="catalog" class="hidden py-16 sm:py-24">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <!-- Панель статуса авторизованного студента с кнопкой «Выйти» -->
+                    <div class="mb-8 p-4 sm:px-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-unlock-keyhole text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-bold text-white">
+                                    Доступ к видеоматериалам открыт • <span id="catalog-user-display" class="text-emerald-400">student</span>
+                                </div>
+                                <div class="text-xs text-slate-400">Вы авторизованы в системе CodePath Academy</div>
+                            </div>
+                        </div>
+                        <button id="catalog-logout-btn" type="button"
+                                class="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs sm:text-sm font-bold transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-right-from-bracket"></i> Выйти из аккаунта
+                        </button>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+                        <div>
+                            <span class="text-cyan-400 font-semibold text-sm uppercase tracking-wider">База видеокурсов</span>
+                            <h2 class="text-2xl sm:text-4xl font-extrabold text-white mt-1">Каталог видеоуроков</h2>
+                            <p class="text-slate-400 mt-2 text-sm sm:text-base max-w-2xl">
+                                18 отобранных практических видеоуроков по фронтенд-разработке. Нажмите на любую карточку, чтобы открыть встроенный плеер прямо на странице.
+                            </p>
+                        </div>
+
+                        <!-- Поле живого поиска -->
+                        <div class="relative w-full md:w-80">
+                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input id="video-search" type="text" placeholder="Поиск по теме (React, Flexbox, Git)..." 
+                                   class="w-full pl-10 pr-10 py-3 rounded-xl bg-slate-900/90 border border-slate-700/80 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all">
+                            <button id="clear-search-btn" type="button" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1" title="Очистить поиск">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Панель фильтрации по категориям -->
+                    <div id="category-filters" class="flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-3 mb-8">
+                        <button type="button" data-category="all" class="filter-btn active shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white shadow-md shadow-indigo-600/25 transition-all">
+                            Все уроки <span class="ml-1.5 text-xs opacity-80">(18)</span>
+                        </button>
+                        <button type="button" data-category="html-css" class="filter-btn shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700/70 transition-all">
+                            <i class="fa-brands fa-html5 text-orange-400 mr-1.5"></i> HTML и CSS <span class="ml-1 text-xs text-slate-400">(4)</span>
+                        </button>
+                        <button type="button" data-category="javascript" class="filter-btn shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700/70 transition-all">
+                            <i class="fa-brands fa-js text-yellow-400 mr-1.5"></i> JavaScript <span class="ml-1 text-xs text-slate-400">(6)</span>
+                        </button>
+                        <button type="button" data-category="react" class="filter-btn shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700/70 transition-all">
+                            <i class="fa-brands fa-react text-cyan-400 mr-1.5"></i> React и Фреймворки <span class="ml-1 text-xs text-slate-400">(5)</span>
+                        </button>
+                        <button type="button" data-category="git-tools" class="filter-btn shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700/70 transition-all">
+                            <i class="fa-brands fa-git-alt text-rose-400 mr-1.5"></i> Git и Инструменты <span class="ml-1 text-xs text-slate-400">(3)</span>
+                        </button>
+                    </div>
+
+                    <!-- Сетка видеокарточек (заполняется через JS только после авторизации) -->
+                    <div id="video-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Карточки будут отрендерены динамически -->
+                    </div>
+
+                    <!-- Сообщение, если по поиску ничего не найдено -->
+                    <div id="empty-search-state" class="hidden text-center py-16 glass-card rounded-2xl">
+                        <div class="w-14 h-14 rounded-2xl bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-4 text-2xl">
+                            <i class="fa-solid fa-video-slash"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-1">Уроки не найдены</h3>
+                        <p class="text-slate-400 text-sm mb-4">Попробуйте изменить поисковый запрос или сбросить фильтр категорий.</p>
+                        <button id="reset-filters-btn" type="button" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors">
+                            Показать все 18 уроков
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- ===================================================================== -->
+        <!-- 4. ИНТЕРАКТИВНЫЙ ОПРОС (4 ВОПРОСА С ОТПРАВКОЙ В TELEGRAM)             -->
+        <!-- ===================================================================== -->
+        <section id="quiz" class="py-16 sm:py-24 border-b border-slate-800/80">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-10">
+                    <span class="text-emerald-400 font-semibold text-sm uppercase tracking-wider">Персонализация обучения</span>
+                    <h2 class="text-2xl sm:text-4xl font-extrabold text-white mt-1">Определите свой путь в Frontend</h2>
+                    <p class="text-slate-400 mt-2 text-sm sm:text-base max-w-2xl mx-auto">
+                        Ответьте на 4 коротких вопроса — мы подберем подходящий трек обучения и автоматически отправим ваши ответы в Telegram-бот.
+                    </p>
+                </div>
+
+                <div class="glass-card rounded-3xl p-6 sm:p-10 shadow-2xl">
+                    <!-- Прогресс-бар опроса -->
+                    <div class="mb-8">
+                        <div class="flex items-center justify-between text-xs sm:text-sm font-semibold text-slate-300 mb-2">
+                            <span id="quiz-step-label">Вопрос 1 из 4</span>
+                            <span id="quiz-percent-label" class="text-cyan-400">25%</span>
+                        </div>
+                        <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div id="quiz-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 transition-all duration-300" style="width: 25%"></div>
+                        </div>
+                    </div>
+
+                    <form id="quiz-form" novalidate>
+                        <!-- Вопрос 1 -->
+                        <div class="quiz-step" data-step="1">
+                            <h3 class="text-lg sm:text-xl font-bold text-white mb-4">1. Какой у вас текущий уровень в веб-разработке?</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="q1" value="Полный новичок (еще не писал код)" class="peer sr-only" checked>
+                                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 peer-checked:border-cyan-400 peer-checked:bg-cyan-500/10 transition-all">
+                                        <div class="font-semibold text-white text-sm">Полный новичок</div>
+                                        <div class="text-xs text-slate-400 mt-1">Никогда раньше не верстал и не программировал</div>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="q1" value="Знаю базовый HTML и CSS" class="peer sr-only">
+                                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 peer-checked:border-cyan-400 peer-checked:bg-cyan-500/10 transition-all">
+                                        <div class="font-semibold text-white text-sm">Знаю базу HTML/CSS</div>
+                                        <div class="text-xs text-slate-400 mt-1">Умею делать простые страницы, хочу учить JS</div>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="q1" value="Пишу на JavaScript, хочу освоить React" class="peer sr-only">
+                                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 peer-checked:border-cyan-400 peer-checked:bg-cyan-500/10 transition-all">
+                                        <div class="font-semibold text-white text-sm">Уверенный Junior JS</div>
+                                        <div class="text-xs text-slate-400 mt-1">Знаю основы JS, перехожу к фреймворкам</div>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="q1" value="Свитчер из другой IT-сферы или дизайна" class="peer sr-only">
+                                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 peer-checked:border-cyan-400 peer-checked:bg-cyan-500/10 transition-all">
+                                        <div class="font-semibold text-white text-sm">Свитчер / Дизайнер</div>
+                                        <div class="text-xs text-slate-400 mt-1">Хочу систематизировать знания по Frontend</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Вопрос 2 -->
+                        <div class="quiz-step hidden" data-step="2">
+                            <h3 class="text-lg sm:text-xl font-bold text-white mb-4">2. Какое направление вам наиболее интересно сейчас?</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="q2" value="Адаптивная верстка и UI (HTML5 / CSS3)" class="peer sr-only" checked>
+                                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 peer-checked:border-cyan-400 peer-checked:bg-cyan-500/10 transition-all">
+                                        <div class="font-semibold text-white text-sm">Верстка и UI-дизайн</div>
+                                        <div class="text-xs text-slate-400 mt-1">Flexbox, Grid, анимации, Tailwind CSS</div>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="q2" value="Современный JavaScript (ES6+ и Async)" class="peer sr-only">
+                                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 peer-checked:border-cyan-400 peer-checked:bg-cyan-500/10 transition-all">
+                                        <div class="font-semibold text-white text-sm">JavaScript и логика</div>
+                                        <div class="text-xs text-slate-400 mt-1">DOM, асинхронность, работа с REST API</div>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="q2" value="Разработка SPA на React" class="peer sr-only">
+                                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 peer-checked:border-cyan-400 peer-checked:bg-cyan-500/10 transition-all">
+                                        <div class="font-semibold text-white text-sm">React и экосистема</div>
+                                        <div class="text-xs text-slate-400 mt-1">Компоненты, хуки, роутинг и архитектура</div>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="q2" value="Fullstack-старт (Frontend + Node.js + Git)" class="peer sr-only">
+                                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 peer-checked:border-cyan-400 peer-checked:bg-cyan-500/10 transition-all">
+                                        <div class="font-semibold text-white text-sm">Комплексный Fullstack</div>
+                                        <div class="text-xs text-slate-400 mt-1">Полный цикл от верстки до серверного JS</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Вопрос 3 -->
+                        <div class="quiz-step hidden" data-step="3">
+                            <h3 class="text-lg sm:text-xl font-bold text-white mb-4">3. Сколько времени в неделю вы готовы уделять практике?</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="q3" value="3–5 часов в неделю (спокойный темп)" class="peer sr-only" checked>
+                                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 peer-checked:border-cyan-400 peer-checked:bg-cyan-500/10 transition-all text-center">
+                                        <div class="font-bold text-white text-base">3–5 часов</div>
+                                        <div class="text-xs text-slate-400 mt-1">По выходным и вечерам</div>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="q3" value="7–10 часов в неделю (оптимальный темп)" class="peer sr-only">
+                                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 peer-checked:border-cyan-400 peer-checked:bg-cyan-500/10 transition-all text-center">
+                                        <div class="font-bold text-white text-base">7–10 часов</div>
+                                        <div class="text-xs text-slate-400 mt-1">1–1.5 часа каждый день</div>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="q3" value="15+ часов в неделю (интенсивный буткемп)" class="peer sr-only">
+                                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 peer-checked:border-cyan-400 peer-checked:bg-cyan-500/10 transition-all text-center">
+                                        <div class="font-bold text-white text-base">15+ часов</div>
+                                        <div class="text-xs text-slate-400 mt-1">Максимальное погружение</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Вопрос 4 и контакт -->
+                        <div class="quiz-step hidden" data-step="4">
+                            <h3 class="text-lg sm:text-xl font-bold text-white mb-4">4. Какая ваша главная цель после прохождения курса?</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="q4" value="Трудоустройство Junior Frontend-разработчиком" class="peer sr-only" checked>
+                                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 peer-checked:border-cyan-400 peer-checked:bg-cyan-500/10 transition-all">
+                                        <div class="font-semibold text-white text-sm">Работа в IT-компании</div>
+                                        <div class="text-xs text-slate-400 mt-1">Собрать портфолио и пройти собеседование</div>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="q4" value="Выход на фриланс и коммерческие заказы" class="peer sr-only">
+                                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 peer-checked:border-cyan-400 peer-checked:bg-cyan-500/10 transition-all">
+                                        <div class="font-semibold text-white text-sm">Фриланс-проекты</div>
+                                        <div class="text-xs text-slate-400 mt-1">Создавать сайты и веб-приложения на заказ</div>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div>
+                                <label for="quiz-user-contact" class="block text-sm font-medium text-slate-300 mb-1.5">
+                                    Ваше имя или @username в Telegram <span class="text-rose-400">*</span>
+                                </label>
+                                <input id="quiz-user-contact" type="text" required placeholder="Например: Алексей (@alex_dev)"
+                                       class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400">
+                            </div>
+                        </div>
+
+                        <!-- Кнопки навигации опроса -->
+                        <div class="flex items-center justify-between gap-3 mt-8 pt-6 border-t border-slate-800/80">
+                            <button id="quiz-prev-btn" type="button" class="hidden px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition-colors">
+                                <i class="fa-solid fa-arrow-left mr-1.5"></i> Назад
+                            </button>
+                            <div class="ml-auto flex items-center gap-3">
+                                <button id="quiz-next-btn" type="button" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-600/25 transition-all">
+                                    Далее <i class="fa-solid fa-arrow-right ml-1.5"></i>
+                                </button>
+                                <button id="quiz-submit-btn" type="submit" class="hidden px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 text-sm font-bold shadow-lg shadow-emerald-500/25 transition-all">
+                                    <i class="fa-brands fa-telegram mr-1.5"></i> Отправить результаты
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Блок предпросмотра отправленного результата -->
+                    <div id="quiz-result-preview" class="hidden mt-6 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-bold text-emerald-300"><i class="fa-solid fa-circle-check mr-1.5"></i> Отчет сформирован и передан в Telegram</span>
+                            <button id="restart-quiz-btn" type="button" class="text-xs text-cyan-400 hover:underline font-semibold">Пройти заново</button>
+                        </div>
+                        <pre id="quiz-sent-payload" class="text-xs text-slate-300 whitespace-pre-wrap font-sans leading-relaxed bg-slate-950/70 p-3.5 rounded-xl border border-slate-800"></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- 5. ФОРМА ЗАЯВКИ НА МЕНТОРСТВО И КОНСУЛЬТАЦИЮ (TELEGRAM BOT API)        -->
+        <!-- ===================================================================== -->
+        <section id="mentorship" class="py-16 sm:py-24">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                    
+                    <!-- Левая информационная колонка -->
+                    <div class="lg:col-span-6 space-y-6">
+                        <span class="text-sky-400 font-semibold text-sm uppercase tracking-wider">Персональное сопровождение</span>
+                        <h2 class="text-2xl sm:text-4xl font-extrabold text-white leading-tight">
+                            Оставьте заявку на <span class="text-cyan-400">разбор кода и менторство</span>
+                        </h2>
+                        <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                            Застряли на сложной теме по JavaScript или React? Нужна помощь с проверкой учебного проекта или подготовкой резюме? Заполните форму — заявка мгновенно придет куратору в Telegram.
+                        </p>
+
+                        <div class="space-y-3 text-sm text-slate-300">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-code-branch"></i>
+                                </div>
+                                <span>Code Review ваших репозиториев на GitHub</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-route"></i>
+                                </div>
+                                <span>Индивидуальная дорожная карта обучения под ваши цели</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                                    <i class="fa-brands fa-telegram"></i>
+                                </div>
+                                <span>Прямая связь с наставником в Telegram без посредников</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Правая колонка с формой заявки -->
+                    <div class="lg:col-span-6">
+                        <form id="mentorship-form" class="glass-card rounded-3xl p-6 sm:p-8 space-y-4 shadow-2xl" novalidate>
+                            <h3 class="text-xl font-bold text-white mb-1">Заявка на консультацию</h3>
+                            <p class="text-xs text-slate-400 mb-4">Заполните контакты, и мы свяжемся с вами в Telegram в ближайшее время.</p>
+
+                            <div>
+                                <label for="lead-name" class="block text-sm font-medium text-slate-300 mb-1.5">
+                                    Ваше имя <span class="text-rose-400">*</span>
+                                </label>
+                                <input id="lead-name" type="text" required placeholder="Например: Дмитрий"
+                                       class="w-full px-4 py-3 rounded-xl bg-slate-950/90 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                            </div>
+
+                            <div>
+                                <label for="lead-contact" class="block text-sm font-medium text-slate-300 mb-1.5">
+                                    Telegram (@username) или телефон <span class="text-rose-400">*</span>
+                                </label>
+                                <input id="lead-contact" type="text" required placeholder="@dmitry_frontend или +7 999 123-45-67"
+                                       class="w-full px-4 py-3 rounded-xl bg-slate-950/90 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                            </div>
+
+                            <div>
+                                <label for="lead-track" class="block text-sm font-medium text-slate-300 mb-1.5">
+                                    Интересующее направление
+                                </label>
+                                <select id="lead-track" class="w-full px-4 py-3 rounded-xl bg-slate-950/90 border border-slate-700 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                    <option value="Frontend с нуля (HTML, CSS, JS)">Frontend с нуля (HTML, CSS, JS)</option>
+                                    <option value="Углубленный JavaScript и асинхронность">Углубленный JavaScript и асинхронность</option>
+                                    <option value="Разработка на React и сборка портфолио">Разработка на React и сборка портфолио</option>
+                                    <option value="Подготовка к собеседованию Junior Frontend">Подготовка к собеседованию Junior Frontend</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="lead-comment" class="block text-sm font-medium text-slate-300 mb-1.5">
+                                    Ваш вопрос или цель обучения
+                                </label>
+                                <textarea id="lead-comment" rows="3" placeholder="Опишите ваш текущий опыт или задачу..."
+                                          class="w-full px-4 py-3 rounded-xl bg-slate-950/90 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400 transition-colors resize-none"></textarea>
+                            </div>
+
+                            <button id="lead-submit-btn" type="submit"
+                                    class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-bold text-sm sm:text-base shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2">
+                                <i class="fa-brands fa-telegram text-lg"></i> Отправить заявку в Telegram
+                            </button>
+                            <p class="text-[11px] text-slate-400 text-center pt-1">
+                                Режим отправки: <span id="form-mode-label" class="text-emerald-400 font-semibold">Активен реальный Telegram Bot API</span>
+                            </p>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- ПОДВАЛ САЙТА (FOOTER)                                                 -->
+    <!-- ===================================================================== -->
+    <footer class="bg-slate-950 border-t border-slate-800/80 py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-400">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center text-white text-xs font-bold">
+                    <i class="fa-solid fa-code"></i>
+                </div>
+                <span class="font-bold text-slate-200">CodePath Academy</span>
+                <span class="hidden md:inline text-slate-600">|</span>
+                <span class="hidden md:inline">Обучающая платформа по Frontend-разработке</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <a href="#about" class="hover:text-white transition-colors">О платформе</a>
+                <a href="#catalog-wrapper" class="hover:text-white transition-colors">Уроки</a>
+                <a href="#quiz" class="hover:text-white transition-colors">Опрос</a>
+                <a href="#mentorship" class="hover:text-white transition-colors">Менторство</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ===================================================================== -->
+    <!-- МОДАЛЬНОЕ ОКНО ВСТРОЕННОГО ВИДЕОПЛЕЕРА YOUTUBE                        -->
+    <!-- ===================================================================== -->
+    <div id="video-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/90 backdrop-blur-md p-3 sm:p-6">
+        <div class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+            <!-- Верхняя панель модального окна -->
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span id="modal-video-category" class="px-2.5 py-1 rounded-lg bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 text-xs font-semibold shrink-0">
+                        Категория
+                    </span>
+                    <span class="text-xs text-slate-400 shrink-0"><i class="fa-regular fa-clock mr-1"></i><span id="modal-video-duration">00:00</span></span>
+                    <span class="hidden sm:inline text-xs text-slate-400 shrink-0">• <span id="modal-video-level">Начальный</span></span>
+                </div>
+                <button id="close-video-modal" type="button" aria-label="Закрыть плеер" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 text-slate-300 flex items-center justify-center transition-colors shrink-0">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Контейнер iframe YouTube -->
+            <div class="relative aspect-video w-full bg-black">
+                <iframe id="youtube-player-iframe" class="w-full h-full" src="" title="YouTube video player" frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen></iframe>
+            </div>
+
+            <!-- Описание урока и переключение между видео -->
+            <div class="p-5 sm:p-6 overflow-y-auto space-y-4">
+                <div>
+                    <h3 id="modal-video-title" class="text-lg sm:text-xl font-bold text-white mb-2">Название видеоурока</h3>
+                    <p id="modal-video-desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed">Описание видеоурока</p>
+                </div>
+
+                <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+                    <button id="prev-video-btn" type="button" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-backward-step"></i> Предыдущий урок
+                    </button>
+                    <button id="next-video-btn" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2">
+                        Следующий урок <i class="fa-solid fa-forward-step"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- МОДАЛЬНОЕ ОКНО SUPABASE И УПРАВЛЕНИЯ ПОЛЬЗОВАТЕЛЯМИ (ДЛЯ ВЛАДЕЛЬЦА)  -->
+    <!-- ===================================================================== -->
+    <div id="supabase-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-5 pb-4 border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-database"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Supabase Auth & Управление пользователями</h3>
+                        <p class="text-xs text-slate-400">Подключение проекта Supabase и добавление/удаление студентов</p>
+                    </div>
+                </div>
+                <button id="close-supabase-modal" type="button" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Вкладки модального окна Supabase -->
+            <div class="flex gap-2 mb-5 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+                <button type="button" data-sb-tab="config" class="sb-tab-btn flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-bold bg-indigo-600 text-white transition-all">
+                    1. Подключение Supabase
+                </button>
+                <button type="button" data-sb-tab="users" class="sb-tab-btn flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-all">
+                    2. Добавление / Удаление пользователей
+                </button>
+            </div>
+
+            <!-- Вкладка 1: Настройки подключения Supabase -->
+            <div id="sb-tab-config" class="space-y-4 text-sm">
+                <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/70 text-xs text-slate-300 leading-relaxed">
+                    Укажите <strong>Project URL</strong> и <strong>Anon Public Key</strong> из раздела <em>Project Settings → API</em> вашего проекта Supabase. Если поля не заполнены, работает встроенная локальная база пользователей (логин по умолчанию: <code class="text-cyan-400">student</code> / <code class="text-cyan-400">123456</code>).
+                </div>
+
+                <div>
+                    <label for="sb-project-url" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Supabase Project URL
+                    </label>
+                    <input id="sb-project-url" type="url" placeholder="https://xxxxxxxxxxxx.supabase.co"
+                           class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-600 font-mono text-xs focus:outline-none focus:border-emerald-400">
+                </div>
+
+                <div>
+                    <label for="sb-anon-key" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Supabase Anon (Public) Key
+                    </label>
+                    <input id="sb-anon-key" type="text" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                           class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-600 font-mono text-xs focus:outline-none focus:border-emerald-400">
+                </div>
+
+                <div>
+                    <label for="sb-service-key" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Supabase Service Role Key <span class="text-slate-500 font-normal lowercase">(опционально — для создания/удаления юзеров прямо с сайта)</span>
+                    </label>
+                    <input id="sb-service-key" type="password" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (service_role)"
+                           class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-600 font-mono text-xs focus:outline-none focus:border-emerald-400">
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-2.5 pt-2">
+                    <button id="save-sb-config-btn" type="button"
+                            class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition-colors">
+                        Сохранить настройки Supabase
+                    </button>
+                    <button id="reset-sb-config-btn" type="button"
+                            class="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm border border-slate-700 transition-colors">
+                        Локальный режим
+                    </button>
+                </div>
+            </div>
+
+            <!-- Вкладка 2: Управление пользователями (Добавление и удаление) -->
+            <div id="sb-tab-users" class="hidden space-y-5 text-sm">
+                <!-- Форма создания нового пользователя -->
+                <form id="owner-create-user-form" class="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-3">
+                    <h4 class="font-bold text-white text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus text-emerald-400"></i> Добавить нового пользователя
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="new-user-login" class="block text-xs text-slate-400 mb-1">Логин или Email</label>
+                            <input id="new-user-login" type="text" required placeholder="Например: alexey или alex@mail.ru"
+                                   class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-emerald-400">
+                        </div>
+                        <div>
+                            <label for="new-user-password" class="block text-xs text-slate-400 mb-1">Пароль (мин. 6 символов)</label>
+                            <input id="new-user-password" type="text" required minlength="6" placeholder="Например: pass2026"
+                                   class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-emerald-400">
+                        </div>
+                    </div>
+                    <button type="submit" id="create-user-submit-btn"
+                            class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm transition-colors">
+                        Создать аккаунт пользователя
+                    </button>
+                </form>
+
+                <!-- Список пользователей с кнопкой удаления -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-bold text-white text-xs uppercase tracking-wider">Зарегистрированные пользователи</h4>
+                        <button type="button" id="refresh-users-list-btn" class="text-xs text-cyan-400 hover:underline">
+                            <i class="fa-solid fa-rotate-right mr-1"></i> Обновить список
+                        </button>
+                    </div>
+                    <div id="owner-users-list" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <!-- Список рендерится динамически -->
+                    </div>
+                </div>
+
+                <!-- Краткая памятка по панели Supabase Dashboard -->
+                <div class="p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/70 text-[11px] text-slate-300 leading-relaxed">
+                    <strong>Управление через официальную панель Supabase:</strong><br>
+                    1. Откройте ваш проект в <strong>Supabase Dashboard → Authentication → Users</strong>.<br>
+                    2. Нажмите <strong>Add user → Create new user</strong>, введите Email (например, <code>ivan@codepath.local</code>) и пароль, включите <strong>Auto Confirm User</strong>.<br>
+                    3. Чтобы забрать доступ, нажмите на три точки справа от пользователя и выберите <strong>Delete user</strong>.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- МОДАЛЬНОЕ ОКНО НАСТРОЕК ИНТЕГРАЦИИ С TELEGRAM BOT API                 -->
+    <!-- ===================================================================== -->
+    <div id="tg-settings-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-xl">
+                        <i class="fa-brands fa-telegram"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Настройка Telegram-бота</h3>
+                        <p class="text-xs text-slate-400">Прямая отправка заявок и опросов через Bot API</p>
+                    </div>
+                </div>
+                <button id="close-tg-modal" type="button" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-sm">
+                <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/70 text-xs text-slate-300 leading-relaxed">
+                    Укажите <strong>Bot Token</strong> (от @BotFather) и ваш <strong>Chat ID</strong> (от @userinfobot), чтобы формы отправляли реальные сообщения в Telegram. Если оставить поля пустыми или выбрать тестовый режим, сайт будет работать в <strong>Демо-режиме</strong> с имитацией отправки.
+                </div>
+
+                <div>
+                    <label for="tg-bot-token" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Telegram Bot Token
+                    </label>
+                    <input id="tg-bot-token" type="text" placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+                           class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-600 font-mono text-xs focus:outline-none focus:border-sky-400">
+                </div>
+
+                <div>
+                    <label for="tg-chat-id" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Telegram Chat ID
+                    </label>
+                    <input id="tg-chat-id" type="text" placeholder="Например: 987654321 или -1001234567890"
+                           class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-600 font-mono text-xs focus:outline-none focus:border-sky-400">
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-2.5 pt-2">
+                    <button id="save-tg-config-btn" type="button"
+                            class="flex-1 py-2.5 px-4 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm transition-colors">
+                        Сохранить и подключить
+                    </button>
+                    <button id="enable-demo-mode-btn" type="button"
+                            class="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm border border-slate-700 transition-colors">
+                        Тестовый режим
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- JAVASCRIPT: БАЗА ДАННЫХ ВИДЕО, ПЛЕЕР, ОПРОС И TELEGRAM BOT API        -->
+    <!-- ===================================================================== -->
+    <script>
+        /**
+         * 1. БАЗА ДАННЫХ ВИДЕОУРОКОВ (18 РЕАЛЬНЫХ YOUTUBE ID ПО 4 КАТЕГОРИЯМ)
+         */
+        const VIDEO_COURSES = [
+            // Категория: HTML и CSS (4 урока)
+            {
+                id: 'mU6anWqZJcc',
+                title: 'HTML и CSS с нуля — Полный курс верстки',
+                category: 'html-css',
+                categoryLabel: 'HTML и CSS',
+                duration: '11:30:00',
+                level: 'Начальный',
+                description: 'Фундаментальный курс по семантической разметке HTML5, каскадным таблицам стилей CSS3, блочной модели, позиционированию и созданию полноценных адаптивных веб-страниц.'
+            },
+            {
+                id: 'G3e-cpL7ofc',
+                title: 'HTML & CSS Full Course — Практика от новичка до профи',
+                category: 'html-css',
+                categoryLabel: 'HTML и CSS',
+                duration: '06:31:24',
+                level: 'Начальный',
+                description: 'Пошаговая разработка интерфейса современного веб-сервиса с разбором Flexbox, CSS Grid, кастомных свойств, теней, переходов и адаптивной сетки.'
+            },
+            {
+                id: '9YffrCViTVk',
+                title: 'Адаптивная верстка и медиа-запросы в современном CSS',
+                category: 'html-css',
+                categoryLabel: 'HTML и CSS',
+                duration: '24:15',
+                level: 'Базовый',
+                description: 'Как правильно строить Mobile-First интерфейсы, работать с относительными единицами измерения (rem, em, vw, vh) и настраивать breakpoints.'
+            },
+            {
+                id: 'hdI2bqOjy3c',
+                title: 'Современный UI-дизайн и основы взаимодействия с DOM',
+                category: 'html-css',
+                categoryLabel: 'HTML и CSS',
+                duration: '01:40:29',
+                level: 'Базовый',
+                description: 'Практический разбор структуры веб-документа, стилизации форм, состояний элементов и связывания верстки с интерактивными скриптами.'
+            },
+
+            // Категория: JavaScript (6 уроков)
+            {
+                id: 'W6NZfCO5SIk',
+                title: 'JavaScript для начинающих: основы языка за 1 час',
+                category: 'javascript',
+                categoryLabel: 'JavaScript',
+                duration: '48:17',
+                level: 'Начальный',
+                description: 'Переменные let и const, типы данных, объекты, массивы, функции и условные операторы — идеальная отправная точка для изучения JS.'
+            },
+            {
+                id: 'PkZNo7MFNFg',
+                title: 'Изучаем JavaScript — Полный базовый курс (ES6+)',
+                category: 'javascript',
+                categoryLabel: 'JavaScript',
+                duration: '03:26:42',
+                level: 'Начальный',
+                description: 'Подробный разбор синтаксиса JavaScript: циклы, работа со строками, деструктуризация, стрелочные функции, шаблонные строки и модули.'
+            },
+            {
+                id: 'jS4aFq5-91M',
+                title: 'JavaScript Programming — Практика и решение задач',
+                category: 'javascript',
+                categoryLabel: 'JavaScript',
+                duration: '07:44:19',
+                level: 'Базовый',
+                description: 'Закрепление знаний на реальных мини-проектах: счетчики, калькуляторы, работа с LocalStorage, событиями клавиатуры и мыши.'
+            },
+            {
+                id: '8aGhZQkoFbQ',
+                title: 'Как работает Event Loop в JavaScript (Асинхронность)',
+                category: 'javascript',
+                categoryLabel: 'JavaScript',
+                duration: '26:52',
+                level: 'Продвинутый',
+                description: 'Глубокое понимание стека вызовов (Call Stack), Web APIs, очереди задач (Callback Queue) и цикла событий в браузере.'
+            },
+            {
+                id: 'Mus_vwhTCq0',
+                title: 'Продвинутый JavaScript: Промисы, Async/Await и Fetch API',
+                category: 'javascript',
+                categoryLabel: 'JavaScript',
+                duration: '14:21',
+                level: 'Средний',
+                description: 'Лучшие практики написания чистого асинхронного кода, обработка ошибок через try/catch и получение данных с удаленных REST API.'
+            },
+            {
+                id: 'Oe421EPjeBE',
+                title: 'JavaScript на сервере: Введение в Node.js и Express',
+                category: 'javascript',
+                categoryLabel: 'JavaScript',
+                duration: '08:16:48',
+                level: 'Средний',
+                description: 'Как фронтенд-разработчику использовать JavaScript для создания собственного бэкенда, работы с модулями NPM и маршрутизацией запросов.'
+            },
+
+            // Категория: React и Фреймворки (5 уроков)
+            {
+                id: 'SqcY0GlETPk',
+                title: 'React для начинающих: Компоненты, Props и State',
+                category: 'react',
+                categoryLabel: 'React и Фреймворки',
+                duration: '01:20:03',
+                level: 'Базовый',
+                description: 'Быстрый старт в самой популярной библиотеке для создания пользовательских интерфейсов. Виртуальный DOM, JSX и обработка событий.'
+            },
+            {
+                id: 'bMknfKXIFA8',
+                title: 'Полный курс по React — Современная разработка SPA',
+                category: 'react',
+                categoryLabel: 'React и Фреймворки',
+                duration: '11:55:27',
+                level: 'Средний',
+                description: 'Комплексное обучение React с нуля: хуки useState и useEffect, условный рендеринг, работа со списками, формами и внешними API.'
+            },
+            {
+                id: 'w7ejDZ8SWv8',
+                title: 'React JS Crash Course — Создание приложения с нуля',
+                category: 'react',
+                categoryLabel: 'React и Фреймворки',
+                duration: '01:48:47',
+                level: 'Базовый',
+                description: 'Практический воркшоп по сборке трекера задач на React с разделением на переиспользуемые компоненты и управлением состоянием.'
+            },
+            {
+                id: 'Ke90Tje7VS0',
+                title: 'Архитектура React-приложений и композиция компонентов',
+                category: 'react',
+                categoryLabel: 'React и Фреймворки',
+                duration: '02:25:26',
+                level: 'Средний',
+                description: 'Проектирование масштабируемой структуры папок, передача данных между компонентами, подъем состояния и оптимизация рендеринга.'
+            },
+            {
+                id: 'Dorf8i6lCuk',
+                title: 'React с нуля: Роутинг, работа с формами и REST API',
+                category: 'react',
+                categoryLabel: 'React и Фреймворки',
+                duration: '03:51:53',
+                level: 'Средний',
+                description: 'Создание многостраничных Single Page Applications с помощью React Router, валидация пользовательского ввода и интеграция с сервером.'
+            },
+
+            // Категория: Git и Инструменты (3 урока)
+            {
+                id: 'RGOj5yH7evk',
+                title: 'Git и GitHub для начинающих — Полный курс',
+                category: 'git-tools',
+                categoryLabel: 'Git и Инструменты',
+                duration: '01:08:29',
+                level: 'Начальный',
+                description: 'Основы системы контроля версий: инициализация репозитория, коммиты, ветвление (branching), слияние (merge), Pull Requests и разрешение конфликтов.'
+            },
+            {
+                id: 'USjZcfj8yxE',
+                title: 'Изучаем Git за 15 минут — Базовые команды разработчика',
+                category: 'git-tools',
+                categoryLabel: 'Git и Инструменты',
+                duration: '15:52',
+                level: 'Начальный',
+                description: 'Краткая и наглядная шпаргалка по ежедневному рабочему процессу в Git: git status, add, commit, push, pull и работа с удаленными ветками.'
+            },
+            {
+                id: 'fBNz5xF-Kx4',
+                title: 'NPM, сборщики проектов и экосистема Frontend-инструментов',
+                category: 'git-tools',
+                categoryLabel: 'Git и Инструменты',
+                duration: '01:30:12',
+                level: 'Базовый',
+                description: 'Как управлять пакетами через npm, настраивать package.json, работать с терминалом и подготавливать фронтенд-проект к публикации.'
+            }
+        ];
+
+        /**
+         * 2. СОСТОЯНИЕ ПРИЛОЖЕНИЯ, SUPABASE И ПРЕДУСТАНОВЛЕННЫЕ ДАННЫЕ TELEGRAM BOT API
+         */
+        const DEFAULT_TG_TOKEN = '9128931317:AAHFC2NbNl6ZxtDEtjX_BRCKR8nOv1z8P1I';
+        const DEFAULT_TG_CHAT_ID = '5200311780';
+
+        // Локальная резервная база пользователей (работает сразу, пока владелец не ввел ключи Supabase)
+        const DEFAULT_LOCAL_USERS = [
+            { id: 'local-1', login: 'student', email: 'student@codepath.local', password: '123456', created_at: '2026-11-20' }
+        ];
+
+        function loadLocalUsers() {
+            try {
+                const raw = localStorage.getItem('codepath_local_users');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            localStorage.setItem('codepath_local_users', JSON.stringify(DEFAULT_LOCAL_USERS));
+            return [...DEFAULT_LOCAL_USERS];
+        }
+
+        const state = {
+            activeCategory: 'all',
+            searchQuery: '',
+            currentVideoIndex: 0,
+            filteredVideos: [...VIDEO_COURSES],
+            quizStep: 1,
+            totalQuizSteps: 4,
+            // Предустановленные данные вашего Telegram-бота
+            tgConfig: {
+                token: localStorage.getItem('codepath_tg_token') || DEFAULT_TG_TOKEN,
+                chatId: localStorage.getItem('codepath_tg_chat_id') || DEFAULT_TG_CHAT_ID
+            },
+            // Конфигурация Supabase и сессия пользователя
+            sbConfig: {
+                url: localStorage.getItem('codepath_sb_url') || '',
+                anonKey: localStorage.getItem('codepath_sb_anon_key') || '',
+                serviceKey: localStorage.getItem('codepath_sb_service_key') || ''
+            },
+            supabaseClient: null,
+            supabaseAdminClient: null,
+            currentUser: null
+        };
+
+        /**
+         * Инициализация клиентов Supabase (обычного и административного при наличии service_role)
+         */
+        function initSupabaseClients() {
+            state.supabaseClient = null;
+            state.supabaseAdminClient = null;
+
+            const { url, anonKey, serviceKey } = state.sbConfig;
+            if (url && anonKey && window.supabase && typeof window.supabase.createClient === 'function') {
+                try {
+                    state.supabaseClient = window.supabase.createClient(url, anonKey);
+                    if (serviceKey) {
+                        state.supabaseAdminClient = window.supabase.createClient(url, serviceKey, {
+                            auth: { autoRefreshToken: false, persistSession: false }
+                        });
+                    }
+                } catch (err) {
+                    console.error('Ошибка инициализации Supabase:', err);
+                }
+            }
+            updateSupabaseStatusUI();
+        }
+
+        /**
+         * Преобразование короткого логина (например, "student1") в формат email для Supabase Auth
+         */
+        function normalizeLoginToEmail(loginInput) {
+            const clean = loginInput.trim().toLowerCase();
+            if (!clean) return '';
+            return clean.includes('@') ? clean : `${clean}@codepath.local`;
+        }
+
+        function formatDisplayName(emailOrLogin) {
+            if (!emailOrLogin) return 'Студент';
+            return emailOrLogin.endsWith('@codepath.local')
+                ? emailOrLogin.replace('@codepath.local', '')
+                : emailOrLogin;
+        }
+
+        /**
+         * Управление доступом к секции видеороликов и элементами навигации
+         */
+        function updateAuthUI() {
+            const isAuthenticated = Boolean(state.currentUser);
+            const authGate = document.getElementById('auth-gate');
+            const catalogSection = document.getElementById('catalog');
+            const videoGrid = document.getElementById('video-grid');
+
+            const headerUserBox = document.getElementById('header-user-box');
+            const headerLoginLink = document.getElementById('header-login-link');
+            const headerUsername = document.getElementById('header-username');
+            const mobileUserControls = document.getElementById('mobile-user-controls');
+            const mobileUsername = document.getElementById('mobile-username');
+            const catalogUserDisplay = document.getElementById('catalog-user-display');
+            const navLockBadge = document.getElementById('nav-lock-badge');
+
+            if (isAuthenticated) {
+                const displayName = formatDisplayName(state.currentUser.email || state.currentUser.login);
+
+                // Скрываем экран блокировки и открываем каталог видеороликов
+                authGate.classList.add('hidden');
+                catalogSection.classList.remove('hidden');
+
+                // Обновляем шапку и кнопку «Выйти»
+                headerUserBox.classList.remove('hidden');
+                headerUserBox.classList.add('flex');
+                headerLoginLink.classList.add('hidden');
+                headerUsername.textContent = displayName;
+
+                mobileUserControls.classList.remove('hidden');
+                mobileUsername.textContent = displayName;
+                catalogUserDisplay.textContent = displayName;
+
+                navLockBadge.className = 'px-1.5 py-0.5 text-[11px] rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                navLockBadge.innerHTML = '18';
+
+                // Рендерим карточки видеоуроков только для авторизованного пользователя
+                renderVideos();
+            } else {
+                // Полностью скрываем секцию с видео и очищаем сетку от карточек
+                catalogSection.classList.add('hidden');
+                videoGrid.innerHTML = '';
+                authGate.classList.remove('hidden');
+
+                // Закрываем видеоплеер, если он был открыт
+                closeVideoModal();
+
+                // Обновляем шапку для гостя
+                headerUserBox.classList.add('hidden');
+                headerUserBox.classList.remove('flex');
+                headerLoginLink.classList.remove('hidden');
+                mobileUserControls.classList.add('hidden');
+
+                navLockBadge.className = 'px-1.5 py-0.5 text-[11px] rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30';
+                navLockBadge.innerHTML = '<i class="fa-solid fa-lock text-[10px]"></i>';
+            }
+        }
+
+        function updateSupabaseStatusUI() {
+            const dot = document.getElementById('sb-status-dot');
+            const authBadge = document.getElementById('auth-mode-badge');
+            const demoHint = document.getElementById('demo-credentials-hint');
+            const isSupabaseLive = Boolean(state.supabaseClient);
+
+            if (isSupabaseLive) {
+                dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+                dot.title = 'Подключен облачный Supabase Auth';
+                if (authBadge) {
+                    authBadge.textContent = 'Supabase Cloud Auth';
+                    authBadge.className = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                }
+                if (demoHint) demoHint.classList.add('hidden');
+            } else {
+                dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+                dot.title = 'Локальная база пользователей (укажите Supabase URL для облачного режима)';
+                if (authBadge) {
+                    authBadge.textContent = 'Локальный режим Auth';
+                    authBadge.className = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30';
+                }
+                if (demoHint) demoHint.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * 5. РЕНДЕРИНГ КАТАЛОГА ВИДЕОУРОКОВ И ФИЛЬТРАЦИЯ (ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ)
+         */
+        function renderVideos() {
+            const grid = document.getElementById('video-grid');
+            if (!state.currentUser) {
+                grid.innerHTML = '';
+                return;
+            }
+
+            const emptyState = document.getElementById('empty-search-state');
+            const query = state.searchQuery.toLowerCase().trim();
+
+            state.filteredVideos = VIDEO_COURSES.filter(video => {
+                const matchesCategory = state.activeCategory === 'all' || video.category === state.activeCategory;
+                const matchesSearch = !query || 
+                    video.title.toLowerCase().includes(query) || 
+                    video.description.toLowerCase().includes(query) ||
+                    video.categoryLabel.toLowerCase().includes(query);
+                return matchesCategory && matchesSearch;
+            });
+
+            if (state.filteredVideos.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.innerHTML = state.filteredVideos.map((video, index) => {
+                const thumbUrl = `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
+                return `
+                    <article data-index="${index}" class="video-card glass-card rounded-2xl overflow-hidden flex flex-col cursor-pointer group">
+                        <!-- Превью видеоролика с кнопкой Play -->
+                        <div class="relative aspect-video bg-slate-950 overflow-hidden">
+                            <img src="${thumbUrl}" alt="${video.title}" loading="lazy"
+                                 onerror="this.onerror=null;this.src='https://placehold.co/640x360/1e293b/38bdf8?text=CodePath+Video';"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent"></div>
+                            
+                            <!-- Бейдж длительности -->
+                            <span class="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-slate-950/85 text-white text-xs font-semibold backdrop-blur-sm border border-white/10">
+                                ${video.duration}
+                            </span>
+
+                            <!-- Бейдж категории -->
+                            <span class="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-indigo-600/90 text-white text-[11px] font-semibold backdrop-blur-sm shadow">
+                                ${video.categoryLabel}
+                            </span>
+
+                            <!-- Центральная кнопка воспроизведения -->
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="w-14 h-14 rounded-full bg-indigo-600/90 group-hover:bg-cyan-500 text-white flex items-center justify-center shadow-xl shadow-indigo-950/60 group-hover:scale-110 transition-all duration-300">
+                                    <i class="fa-solid fa-play text-lg ml-0.5"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Текстовое содержимое карточки -->
+                        <div class="p-5 flex-1 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center gap-2 text-xs text-slate-400 mb-2">
+                                    <span class="text-cyan-400 font-medium"><i class="fa-solid fa-layer-group mr-1"></i>${video.level}</span>
+                                    <span>•</span>
+                                    <span>YouTube Курс</span>
+                                </div>
+                                <h3 class="text-base sm:text-lg font-bold text-white group-hover:text-cyan-400 transition-colors line-clamp-2 mb-2">
+                                    ${video.title}
+                                </h3>
+                                <p class="text-xs sm:text-sm text-slate-400 line-clamp-2 leading-relaxed">
+                                    ${video.description}
+                                </p>
+                            </div>
+
+                            <div class="pt-4 mt-4 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-indigo-400 group-hover:text-cyan-300">
+                                <span>Смотреть урок на сайте</span>
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            // Навешиваем обработчики клика для открытия плеера
+            document.querySelectorAll('.video-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const idx = parseInt(card.getAttribute('data-index'), 10);
+                    openVideoModal(idx);
+                });
+            });
+        }
+
+        /**
+         * 6. УПРАВЛЕНИЕ ВСТРОЕННЫМ ВИДЕОПЛЕЕРОМ (МОДАЛЬНОЕ ОКНО)
+         */
+        function openVideoModal(index) {
+            // Строгая проверка авторизации перед открытием видеоплеера
+            if (!state.currentUser) {
+                showToast('Доступ ограничен', 'Пожалуйста, авторизуйтесь для просмотра видеоматериалов.', 'error');
+                return;
+            }
+
+            state.currentVideoIndex = index;
+            const video = state.filteredVideos[index];
+            if (!video) return;
+
+            const modal = document.getElementById('video-modal');
+            const iframe = document.getElementById('youtube-player-iframe');
+
+            document.getElementById('modal-video-category').textContent = video.categoryLabel;
+            document.getElementById('modal-video-title').textContent = video.title;
+            document.getElementById('modal-video-duration').textContent = video.duration;
+            document.getElementById('modal-video-level').textContent = video.level;
+            document.getElementById('modal-video-desc').textContent = video.description;
+
+            // Встраиваем видео с автозапуском
+            iframe.src = `https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0`;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeVideoModal() {
+            const modal = document.getElementById('video-modal');
+            const iframe = document.getElementById('youtube-player-iframe');
+            
+            // Останавливаем воспроизведение при закрытии
+            iframe.src = '';
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+
+        /**
+         * 7. УВЕДОМЛЕНИЯ (TOAST), ОПРОС И ОТПРАВКА ДАННЫХ В TELEGRAM BOT API
+         */
+        function showToast(title, message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const styles = {
+                success: {
+                    border: 'border-emerald-500/40',
+                    iconBg: 'bg-emerald-500/20 text-emerald-400',
+                    icon: 'fa-solid fa-circle-check'
+                },
+                error: {
+                    border: 'border-rose-500/40',
+                    iconBg: 'bg-rose-500/20 text-rose-400',
+                    icon: 'fa-solid fa-circle-exclamation'
+                },
+                info: {
+                    border: 'border-sky-500/40',
+                    iconBg: 'bg-sky-500/20 text-sky-400',
+                    icon: 'fa-solid fa-circle-info'
+                }
+            };
+
+            const current = styles[type] || styles.info;
+            const toast = document.createElement('div');
+            toast.className = `toast-enter pointer-events-auto bg-slate-900/95 backdrop-blur-md border ${current.border} rounded-2xl p-4 shadow-2xl flex items-start gap-3`;
+            toast.innerHTML = `
+                <div class="w-9 h-9 rounded-xl ${current.iconBg} flex items-center justify-center shrink-0 mt-0.5">
+                    <i class="${current.icon}"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-bold text-white">${title}</div>
+                    <div class="text-xs text-slate-300 mt-0.5 leading-relaxed">${message}</div>
+                </div>
+                <button type="button" class="text-slate-400 hover:text-white p-1 shrink-0" aria-label="Закрыть">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            `;
+
+            const closeBtn = toast.querySelector('button');
+            const removeToast = () => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            };
+
+            closeBtn.addEventListener('click', removeToast);
+            container.appendChild(toast);
+            setTimeout(removeToast, 5500);
+        }
+
+        function updateTelegramStatusUI() {
+            const dot = document.getElementById('tg-status-dot');
+            const formLabel = document.getElementById('form-mode-label');
+            const isConfigured = Boolean(state.tgConfig.token && state.tgConfig.chatId);
+
+            if (dot) {
+                dot.className = isConfigured
+                    ? 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse'
+                    : 'w-2 h-2 rounded-full bg-amber-400';
+                dot.title = isConfigured
+                    ? 'Подключен реальный Telegram Bot API'
+                    : 'Демо-режим (укажите Bot Token и Chat ID)';
+            }
+
+            if (formLabel) {
+                if (isConfigured) {
+                    formLabel.textContent = 'Активен реальный Telegram Bot API';
+                    formLabel.className = 'text-emerald-400 font-semibold';
+                } else {
+                    formLabel.textContent = 'Тестовый демо-режим (настройте бота в шапке)';
+                    formLabel.className = 'text-amber-400 font-semibold';
+                }
+            }
+        }
+
+        function updateQuizUI() {
+            const steps = document.querySelectorAll('.quiz-step');
+            const prevBtn = document.getElementById('quiz-prev-btn');
+            const nextBtn = document.getElementById('quiz-next-btn');
+            const submitBtn = document.getElementById('quiz-submit-btn');
+            const progressBar = document.getElementById('quiz-progress-bar');
+            const stepLabel = document.getElementById('quiz-step-label');
+            const percentLabel = document.getElementById('quiz-percent-label');
+
+            if (!steps.length) return;
+
+            steps.forEach(stepEl => {
+                const stepNum = parseInt(stepEl.getAttribute('data-step'), 10);
+                stepEl.classList.toggle('hidden', stepNum !== state.quizStep);
+            });
+
+            const percent = Math.round((state.quizStep / state.totalQuizSteps) * 100);
+            if (progressBar) progressBar.style.width = `${percent}%`;
+            if (stepLabel) stepLabel.textContent = `Вопрос ${state.quizStep} из ${state.totalQuizSteps}`;
+            if (percentLabel) percentLabel.textContent = `${percent}%`;
+
+            if (prevBtn) prevBtn.classList.toggle('hidden', state.quizStep === 1);
+            if (nextBtn) nextBtn.classList.toggle('hidden', state.quizStep === state.totalQuizSteps);
+            if (submitBtn) submitBtn.classList.toggle('hidden', state.quizStep !== state.totalQuizSteps);
+        }
+
+        async function sendToTelegram(htmlMessage) {
+            const { token, chatId } = state.tgConfig;
+
+            if (!token || !chatId) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                return { mode: 'demo' };
+            }
+
+            const url = `https://api.telegram.org/bot${encodeURIComponent(token)}/sendMessage`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: htmlMessage,
+                    parse_mode: 'HTML'
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok || !data.ok) {
+                throw new Error(data.description || 'Не удалось отправить сообщение в Telegram Bot API.');
+            }
+
+            return { mode: 'live', data };
+        }
+
+        /**
+         * 8. УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ДЛЯ ВЛАДЕЛЬЦА (SUPABASE ADMIN / LOCAL)
+         */
+        async function renderOwnerUsersList() {
+            const listContainer = document.getElementById('owner-users-list');
+            listContainer.innerHTML = '<div class="text-xs text-slate-400 py-2">Загрузка списка пользователей...</div>';
+
+            // Вариант 1: Если подключен Supabase + Service Role Key
+            if (state.supabaseAdminClient) {
+                try {
+                    const { data, error } = await state.supabaseAdminClient.auth.admin.listUsers();
+                    if (error) throw error;
+
+                    const users = data?.users || [];
+                    if (users.length === 0) {
+                        listContainer.innerHTML = '<div class="text-xs text-slate-400 py-2">В Supabase пока нет созданных пользователей.</div>';
+                        return;
+                    }
+
+                    listContainer.innerHTML = users.map(u => `
+                        <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-white truncate">${formatDisplayName(u.email)}</div>
+                                <div class="text-[11px] text-slate-400 truncate">${u.email}</div>
+                            </div>
+                            <button type="button" data-delete-sb-user="${u.id}"
+                                    class="px-2.5 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 text-xs font-semibold transition-colors shrink-0">
+                                <i class="fa-solid fa-trash-can mr-1"></i> Удалить
+                            </button>
+                        </div>
+                    `).join('');
+
+                    listContainer.querySelectorAll('[data-delete-sb-user]').forEach(btn => {
+                        btn.addEventListener('click', async () => {
+                            const userId = btn.getAttribute('data-delete-sb-user');
+                            btn.disabled = true;
+                            try {
+                                const { error: delErr } = await state.supabaseAdminClient.auth.admin.deleteUser(userId);
+                                if (delErr) throw delErr;
+                                showToast('Пользователь удален', 'Учетная запись успешно удалена из Supabase.', 'success');
+                                renderOwnerUsersList();
+                            } catch (err) {
+                                showToast('Ошибка удаления', err.message, 'error');
+                                btn.disabled = false;
+                            }
+                        });
+                    });
+                    return;
+                } catch (err) {
+                    listContainer.innerHTML = `<div class="text-xs text-rose-400 py-2">Ошибка загрузки из Supabase: ${err.message}</div>`;
+                    return;
+                }
+            }
+
+            // Вариант 2: Если используется только Project URL + Anon Key (без Service Role Key)
+            if (state.supabaseClient) {
+                listContainer.innerHTML = `
+                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 leading-relaxed">
+                        Вы подключили Supabase через <strong>Anon Key</strong>. Вы можете создать пользователя через форму выше (через SignUp) или управлять полным списком и удалением пользователей в панели <strong>Supabase Dashboard → Authentication → Users</strong> (либо указать <code>Service Role Key</code> в настройках).
+                    </div>
+                `;
+                return;
+            }
+
+            // Вариант 3: Локальный режим (без облачного Supabase)
+            const localUsers = loadLocalUsers();
+            listContainer.innerHTML = localUsers.map(u => `
+                <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-white truncate">Логин: <span class="text-cyan-400">${u.login}</span></div>
+                        <div class="text-[11px] text-slate-400 truncate">Пароль: <code class="text-slate-300">${u.password}</code></div>
+                    </div>
+                    <button type="button" data-delete-local-user="${u.id}"
+                            class="px-2.5 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 text-xs font-semibold transition-colors shrink-0">
+                        <i class="fa-solid fa-trash-can mr-1"></i> Удалить
+                    </button>
+                </div>
+            `).join('');
+
+            listContainer.querySelectorAll('[data-delete-local-user]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-delete-local-user');
+                    const updated = loadLocalUsers().filter(item => item.id !== id);
+                    localStorage.setItem('codepath_local_users', JSON.stringify(updated));
+                    showToast('Пользователь удален', 'Доступ для данного логина закрыт.', 'success');
+                    renderOwnerUsersList();
+                });
+            });
+        }
+
+        /**
+         * 9. ИНИЦИАЛИЗАЦИЯ ВСЕХ СОБЫТИЙ ПОСЛЕ ЗАГРУЗКИ DOM
+         */
+        document.addEventListener('DOMContentLoaded', async () => {
+            initSupabaseClients();
+            updateTelegramStatusUI();
+            updateQuizUI();
+
+            // Проверяем активную сессию при загрузке страницы
+            if (state.supabaseClient) {
+                try {
+                    const { data } = await state.supabaseClient.auth.getSession();
+                    if (data?.session?.user) {
+                        state.currentUser = data.session.user;
+                    }
+                } catch (e) {
+                    console.error('Ошибка проверки сессии Supabase:', e);
+                }
+            } else {
+                const savedLocalSession = localStorage.getItem('codepath_active_local_user');
+                if (savedLocalSession) {
+                    try {
+                        state.currentUser = JSON.parse(savedLocalSession);
+                    } catch (e) {
+                        localStorage.removeItem('codepath_active_local_user');
+                    }
+                }
+            }
+
+            updateAuthUI();
+
+            // Показать / скрыть пароль в форме входа
+            const togglePwdBtn = document.getElementById('toggle-password-visibility');
+            const loginPwdInput = document.getElementById('login-password');
+            togglePwdBtn.addEventListener('click', () => {
+                const isPwd = loginPwdInput.type === 'password';
+                loginPwdInput.type = isPwd ? 'text' : 'password';
+                togglePwdBtn.innerHTML = isPwd
+                    ? '<i class="fa-regular fa-eye-slash text-sm"></i>'
+                    : '<i class="fa-regular fa-eye text-sm"></i>';
+            });
+
+            // Подстановка тестового логина/пароля в локальном режиме
+            document.getElementById('fill-demo-login-btn').addEventListener('click', () => {
+                document.getElementById('login-username').value = 'student';
+                document.getElementById('login-password').value = '123456';
+            });
+
+            // Обработка формы входа (Supabase Auth + локальный резерв)
+            const loginForm = document.getElementById('login-form');
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const rawLogin = document.getElementById('login-username').value.trim();
+                const password = document.getElementById('login-password').value.trim();
+
+                if (!rawLogin || !password) {
+                    showToast('Введите данные', 'Укажите логин (или email) и пароль для входа.', 'error');
+                    return;
+                }
+
+                const submitBtn = document.getElementById('login-submit-btn');
+                const originalHtml = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Проверка доступа...';
+
+                try {
+                    if (state.supabaseClient) {
+                        const normalizedEmail = normalizeLoginToEmail(rawLogin);
+                        const { data, error } = await state.supabaseClient.auth.signInWithPassword({
+                            email: normalizedEmail,
+                            password: password
+                        });
+
+                        if (error) {
+                            throw new Error('Неверный логин или пароль (либо аккаунт не подтвержден в Supabase).');
+                        }
+
+                        state.currentUser = data.user;
+                        loginForm.reset();
+                        updateAuthUI();
+                        showToast('Вход выполнен', `Добро пожаловать, ${formatDisplayName(data.user.email)}! Видеоуроки открыты.`, 'success');
+                    } else {
+                        // Проверка по локальной базе пользователей
+                        const localUsers = loadLocalUsers();
+                        const normalizedEmail = normalizeLoginToEmail(rawLogin);
+                        const found = localUsers.find(u =>
+                            (u.login.toLowerCase() === rawLogin.toLowerCase() || u.email.toLowerCase() === normalizedEmail) &&
+                            u.password === password
+                        );
+
+                        if (!found) {
+                            throw new Error('Неверный логин или пароль. Проверьте данные у владельца сайта.');
+                        }
+
+                        state.currentUser = { id: found.id, login: found.login, email: found.email };
+                        localStorage.setItem('codepath_active_local_user', JSON.stringify(state.currentUser));
+                        loginForm.reset();
+                        updateAuthUI();
+                        showToast('Вход выполнен', `Добро пожаловать, ${found.login}! Секция видеороликов разблокирована.`, 'success');
+                    }
+                } catch (err) {
+                    showToast('Ошибка авторизации', err.message, 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHtml;
+                }
+            });
+
+            // Функция выхода из аккаунта («Выйти»)
+            async function handleLogout() {
+                if (state.supabaseClient) {
+                    try {
+                        await state.supabaseClient.auth.signOut();
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+                localStorage.removeItem('codepath_active_local_user');
+                state.currentUser = null;
+                updateAuthUI();
+                showToast('Вы вышли из системы', 'Доступ к секции видеороликов закрыт.', 'info');
+            }
+
+            document.getElementById('header-logout-btn').addEventListener('click', handleLogout);
+            document.getElementById('catalog-logout-btn').addEventListener('click', handleLogout);
+            document.getElementById('mobile-logout-btn').addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+                mobileMenuIcon.className = 'fa-solid fa-bars text-lg';
+                handleLogout();
+            });
+
+            // Модальное окно Supabase и управления пользователями
+            const sbModal = document.getElementById('supabase-modal');
+            const sbUrlInput = document.getElementById('sb-project-url');
+            const sbAnonInput = document.getElementById('sb-anon-key');
+            const sbServiceInput = document.getElementById('sb-service-key');
+
+            function openSupabaseModal(defaultTab = 'config') {
+                sbUrlInput.value = state.sbConfig.url;
+                sbAnonInput.value = state.sbConfig.anonKey;
+                sbServiceInput.value = state.sbConfig.serviceKey;
+                sbModal.classList.remove('hidden');
+                sbModal.classList.add('flex');
+                switchSupabaseTab(defaultTab);
+            }
+
+            function switchSupabaseTab(tabName) {
+                document.querySelectorAll('.sb-tab-btn').forEach(btn => {
+                    const isActive = btn.dataset.sbTab === tabName;
+                    btn.className = isActive
+                        ? 'sb-tab-btn flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-bold bg-indigo-600 text-white transition-all'
+                        : 'sb-tab-btn flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-all';
+                });
+                document.getElementById('sb-tab-config').classList.toggle('hidden', tabName !== 'config');
+                document.getElementById('sb-tab-users').classList.toggle('hidden', tabName !== 'users');
+                if (tabName === 'users') {
+                    renderOwnerUsersList();
+                }
+            }
+
+            document.getElementById('open-supabase-modal-btn').addEventListener('click', () => openSupabaseModal('config'));
+            document.getElementById('gate-open-supabase-btn').addEventListener('click', () => openSupabaseModal('users'));
+            document.getElementById('close-supabase-modal').addEventListener('click', () => {
+                sbModal.classList.add('hidden');
+                sbModal.classList.remove('flex');
+            });
+            sbModal.addEventListener('click', (e) => {
+                if (e.target.id === 'supabase-modal') {
+                    sbModal.classList.add('hidden');
+                    sbModal.classList.remove('flex');
+                }
+            });
+
+            document.querySelectorAll('.sb-tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => switchSupabaseTab(btn.dataset.sbTab));
+            });
+
+            document.getElementById('save-sb-config-btn').addEventListener('click', () => {
+                state.sbConfig.url = sbUrlInput.value.trim();
+                state.sbConfig.anonKey = sbAnonInput.value.trim();
+                state.sbConfig.serviceKey = sbServiceInput.value.trim();
+
+                localStorage.setItem('codepath_sb_url', state.sbConfig.url);
+                localStorage.setItem('codepath_sb_anon_key', state.sbConfig.anonKey);
+                localStorage.setItem('codepath_sb_service_key', state.sbConfig.serviceKey);
+
+                initSupabaseClients();
+                showToast('Настройки Supabase сохранены', state.supabaseClient ? 'Облачная авторизация Supabase активирована.' : 'Укажите Project URL и Anon Key для подключения Supabase.', 'success');
+            });
+
+            document.getElementById('reset-sb-config-btn').addEventListener('click', () => {
+                sbUrlInput.value = '';
+                sbAnonInput.value = '';
+                sbServiceInput.value = '';
+                state.sbConfig = { url: '', anonKey: '', serviceKey: '' };
+                localStorage.removeItem('codepath_sb_url');
+                localStorage.removeItem('codepath_sb_anon_key');
+                localStorage.removeItem('codepath_sb_service_key');
+                initSupabaseClients();
+                showToast('Включен локальный режим', 'Используется локальный список логинов и паролей.', 'info');
+            });
+
+            // Создание нового пользователя владельцем сайта
+            document.getElementById('owner-create-user-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const loginVal = document.getElementById('new-user-login').value.trim();
+                const pwdVal = document.getElementById('new-user-password').value.trim();
+
+                if (!loginVal || pwdVal.length < 6) {
+                    showToast('Проверьте данные', 'Введите логин и пароль длиной не менее 6 символов.', 'error');
+                    return;
+                }
+
+                const normalizedEmail = normalizeLoginToEmail(loginVal);
+                const btn = document.getElementById('create-user-submit-btn');
+                btn.disabled = true;
+
+                try {
+                    if (state.supabaseAdminClient) {
+                        // Создание с авто-подтверждением через Admin API
+                        const { error } = await state.supabaseAdminClient.auth.admin.createUser({
+                            email: normalizedEmail,
+                            password: pwdVal,
+                            email_confirm: true
+                        });
+                        if (error) throw error;
+                        showToast('Пользователь создан в Supabase', `Логин: ${loginVal} | Пароль: ${pwdVal}`, 'success');
+                    } else if (state.supabaseClient) {
+                        // Регистрация через обычный клиент Supabase
+                        const { error } = await state.supabaseClient.auth.signUp({
+                            email: normalizedEmail,
+                            password: pwdVal
+                        });
+                        if (error) throw error;
+                        showToast('Запрос отправлен в Supabase', `Аккаунт ${normalizedEmail} создан (при необходимости подтвердите его в Supabase Dashboard).`, 'success');
+                    } else {
+                        // Добавление в локальную базу
+                        const users = loadLocalUsers();
+                        if (users.some(u => u.login.toLowerCase() === loginVal.toLowerCase())) {
+                            throw new Error('Пользователь с таким логином уже существует.');
+                        }
+                        users.push({
+                            id: 'local-' + Date.now(),
+                            login: loginVal,
+                            email: normalizedEmail,
+                            password: pwdVal,
+                            created_at: new Date().toISOString().slice(0, 10)
+                        });
+                        localStorage.setItem('codepath_local_users', JSON.stringify(users));
+                        showToast('Пользователь добавлен', `Логин: ${loginVal} | Пароль: ${pwdVal}`, 'success');
+                    }
+
+                    document.getElementById('owner-create-user-form').reset();
+                    renderOwnerUsersList();
+                } catch (err) {
+                    showToast('Ошибка создания пользователя', err.message, 'error');
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+
+            document.getElementById('refresh-users-list-btn').addEventListener('click', renderOwnerUsersList);
+
+            // Мобильное бургер-меню
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileMenuIcon = document.getElementById('mobile-menu-icon');
+
+            mobileMenuBtn.addEventListener('click', () => {
+                const isHidden = mobileMenu.classList.toggle('hidden');
+                mobileMenuIcon.className = isHidden ? 'fa-solid fa-bars text-lg' : 'fa-solid fa-xmark text-lg';
+            });
+
+            document.querySelectorAll('.mobile-nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuIcon.className = 'fa-solid fa-bars text-lg';
+                });
+            });
+
+            // Фильтрация по категориям
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => {
+                        b.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-600/25', 'font-semibold');
+                        b.classList.add('bg-slate-800/80', 'text-slate-300', 'font-medium');
+                    });
+                    btn.classList.remove('bg-slate-800/80', 'text-slate-300', 'font-medium');
+                    btn.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-600/25', 'font-semibold');
+
+                    state.activeCategory = btn.dataset.category;
+                    renderVideos();
+                });
+            });
+
+            // Живой поиск видеоуроков
+            const searchInput = document.getElementById('video-search');
+            const clearSearchBtn = document.getElementById('clear-search-btn');
+
+            searchInput.addEventListener('input', (e) => {
+                state.searchQuery = e.target.value;
+                clearSearchBtn.classList.toggle('hidden', !state.searchQuery);
+                renderVideos();
+            });
+
+            clearSearchBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                state.searchQuery = '';
+                clearSearchBtn.classList.add('hidden');
+                renderVideos();
+            });
+
+            document.getElementById('reset-filters-btn').addEventListener('click', () => {
+                searchInput.value = '';
+                state.searchQuery = '';
+                state.activeCategory = 'all';
+                clearSearchBtn.classList.add('hidden');
+                document.querySelector('.filter-btn[data-category="all"]').click();
+            });
+
+            // Управление модальным окном видеоплеера
+            document.getElementById('close-video-modal').addEventListener('click', closeVideoModal);
+            document.getElementById('video-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'video-modal') closeVideoModal();
+            });
+
+            document.getElementById('prev-video-btn').addEventListener('click', () => {
+                const prevIndex = (state.currentVideoIndex - 1 + state.filteredVideos.length) % state.filteredVideos.length;
+                openVideoModal(prevIndex);
+            });
+
+            document.getElementById('next-video-btn').addEventListener('click', () => {
+                const nextIndex = (state.currentVideoIndex + 1) % state.filteredVideos.length;
+                openVideoModal(nextIndex);
+            });
+
+            // Закрытие модальных окон по клавише Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeVideoModal();
+                    document.getElementById('tg-settings-modal').classList.add('hidden');
+                    document.getElementById('tg-settings-modal').classList.remove('flex');
+                    sbModal.classList.add('hidden');
+                    sbModal.classList.remove('flex');
+                }
+            });
+
+            // Навигация по опросу
+            document.getElementById('quiz-prev-btn').addEventListener('click', () => {
+                if (state.quizStep > 1) {
+                    state.quizStep--;
+                    updateQuizUI();
+                }
+            });
+
+            document.getElementById('quiz-next-btn').addEventListener('click', () => {
+                if (state.quizStep < state.totalQuizSteps) {
+                    state.quizStep++;
+                    updateQuizUI();
+                }
+            });
+
+            // Отправка результатов опроса в Telegram
+            const quizForm = document.getElementById('quiz-form');
+            quizForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const contactInput = document.getElementById('quiz-user-contact');
+                const contactValue = contactInput.value.trim();
+
+                if (!contactValue) {
+                    contactInput.focus();
+                    showToast('Заполните контакт', 'Пожалуйста, укажите ваше имя или ник в Telegram перед отправкой.', 'error');
+                    return;
+                }
+
+                const formData = new FormData(quizForm);
+                const q1 = formData.get('q1');
+                const q2 = formData.get('q2');
+                const q3 = formData.get('q3');
+                const q4 = formData.get('q4');
+
+                const tgMessage = [
+                    '📊 <b>Новый результат опроса — CodePath Academy</b>',
+                    '',
+                    `👤 <b>Участник:</b> ${contactValue}`,
+                    `1️⃣ <b>Текущий уровень:</b> ${q1}`,
+                    `2️⃣ <b>Направление:</b> ${q2}`,
+                    `3️⃣ <b>Время на обучение:</b> ${q3}`,
+                    `4️⃣ <b>Главная цель:</b> ${q4}`
+                ].join('\n');
+
+                const submitBtn = document.getElementById('quiz-submit-btn');
+                const originalHtml = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Отправка...';
+
+                try {
+                    const result = await sendToTelegram(tgMessage);
+                    
+                    // Показываем сформированный отчет под формой
+                    const previewBox = document.getElementById('quiz-result-preview');
+                    const payloadPre = document.getElementById('quiz-sent-payload');
+                    payloadPre.textContent = tgMessage.replace(/<[^>]*>/g, '');
+                    previewBox.classList.remove('hidden');
+
+                    if (result.mode === 'live') {
+                        showToast('Опрос отправлен в Telegram!', 'Ваши ответы успешно доставлены через Telegram Bot API.', 'success');
+                    } else {
+                        showToast('Опрос выполнен (Демо-режим)', 'Результаты сформированы! Для реальной доставки укажите Bot Token и Chat ID в настройках.', 'info');
+                    }
+                } catch (error) {
+                    showToast('Ошибка отправки', error.message, 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHtml;
+                }
+            });
+
+            document.getElementById('restart-quiz-btn').addEventListener('click', () => {
+                state.quizStep = 1;
+                updateQuizUI();
+                document.getElementById('quiz-result-preview').classList.add('hidden');
+            });
+
+            // Отправка формы заявки на менторство в Telegram
+            const leadForm = document.getElementById('mentorship-form');
+            leadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const nameInput = document.getElementById('lead-name');
+                const contactInput = document.getElementById('lead-contact');
+                const trackInput = document.getElementById('lead-track');
+                const commentInput = document.getElementById('lead-comment');
+
+                const name = nameInput.value.trim();
+                const contact = contactInput.value.trim();
+                const track = trackInput.value;
+                const comment = commentInput.value.trim() || 'Без комментария';
+
+                if (!name || !contact) {
+                    showToast('Проверьте поля формы', 'Укажите ваше имя и контакт в Telegram или номер телефона.', 'error');
+                    if (!name) nameInput.focus();
+                    else contactInput.focus();
+                    return;
+                }
+
+                const tgMessage = [
+                    '🚀 <b>Новая заявка на менторство — CodePath Academy</b>',
+                    '',
+                    `👤 <b>Имя:</b> ${name}`,
+                    `📱 <b>Контакт:</b> ${contact}`,
+                    `🎯 <b>Направление:</b> ${track}`,
+                    `💬 <b>Комментарий:</b> ${comment}`
+                ].join('\n');
+
+                const submitBtn = document.getElementById('lead-submit-btn');
+                const originalHtml = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Отправляем заявку...';
+
+                try {
+                    const result = await sendToTelegram(tgMessage);
+                    leadForm.reset();
+
+                    if (result.mode === 'live') {
+                        showToast('Заявка отправлена в Telegram!', `Спасибо, ${name}! Сообщение успешно передано в Telegram-бот.`, 'success');
+                    } else {
+                        showToast('Заявка принята (Демо-режим)', `Спасибо, ${name}! Форма валидирована. Подключите Token бота в шапке для реальной отправки.`, 'info');
+                    }
+                } catch (error) {
+                    showToast('Ошибка Telegram API', error.message, 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHtml;
+                }
+            });
+
+            // Модальное окно настроек Telegram Bot API
+            const tgModal = document.getElementById('tg-settings-modal');
+            const tokenInput = document.getElementById('tg-bot-token');
+            const chatIdInput = document.getElementById('tg-chat-id');
+
+            document.getElementById('open-tg-settings-btn').addEventListener('click', () => {
+                tokenInput.value = state.tgConfig.token;
+                chatIdInput.value = state.tgConfig.chatId;
+                tgModal.classList.remove('hidden');
+                tgModal.classList.add('flex');
+            });
+
+            document.getElementById('close-tg-modal').addEventListener('click', () => {
+                tgModal.classList.add('hidden');
+                tgModal.classList.remove('flex');
+            });
+
+            tgModal.addEventListener('click', (e) => {
+                if (e.target.id === 'tg-settings-modal') {
+                    tgModal.classList.add('hidden');
+                    tgModal.classList.remove('flex');
+                }
+            });
+
+            document.getElementById('save-tg-config-btn').addEventListener('click', () => {
+                const newToken = tokenInput.value.trim();
+                const newChatId = chatIdInput.value.trim();
+
+                state.tgConfig.token = newToken;
+                state.tgConfig.chatId = newChatId;
+
+                localStorage.setItem('codepath_tg_token', newToken);
+                localStorage.setItem('codepath_tg_chat_id', newChatId);
+
+                updateTelegramStatusUI();
+                tgModal.classList.add('hidden');
+                tgModal.classList.remove('flex');
+
+                if (newToken && newChatId) {
+                    showToast('Telegram-бот подключен', 'Все заявки и результаты опросов теперь будут отправляться в ваш чат.', 'success');
+                } else {
+                    showToast('Включен демо-режим', 'Token или Chat ID не заполнены — формы работают в тестовом режиме.', 'info');
+                }
+            });
+
+            document.getElementById('enable-demo-mode-btn').addEventListener('click', () => {
+                tokenInput.value = '';
+                chatIdInput.value = '';
+                state.tgConfig.token = '';
+                state.tgConfig.chatId = '';
+                localStorage.removeItem('codepath_tg_token');
+                localStorage.removeItem('codepath_tg_chat_id');
+
+                updateTelegramStatusUI();
+                tgModal.classList.add('hidden');
+                tgModal.classList.remove('flex');
+                showToast('Тестовый режим активирован', 'Отправка форм работает без токена с имитацией ответа Telegram API.', 'info');
+            });
+        });
+    </script>
+</body>
+</html>
